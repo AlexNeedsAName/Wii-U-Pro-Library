@@ -1,4 +1,3 @@
-import hexdump
 import sys
 from collections import OrderedDict
 
@@ -10,8 +9,8 @@ axes = {'LeftX': 0, 'LeftY': 0, 'RightX': 0, 'RightY': 0}
 
 def runInputThread():
 	while 1:
-		data = hexdump.dump(pipe.read(16), 4)
-		array = data.split(' ')
+		data = pipe.read(16).encode("hex").upper()
+		array = [data[i:i+4] for i in range(0, len(data), 4)]
 		if(array[4] == '0100'): #Button Press
 			state = False
 			if(array[6] == '0100'):
