@@ -8,7 +8,7 @@ def write(str):
 
 WiiInput.startInputThread()
 
-write("\x1b[?25l\f\nx1:\ny1:\nOn:\nx2:\ny2:\nOn:\nAngle:\nState:")
+write("\x1b[?25l\f\nx1:\ny1:\nOn:\nx2:\ny2:\nOn:\nAngle:")
 sys.stdout.flush()
 
 try:
@@ -28,6 +28,6 @@ try:
 		sys.stdout.flush()
 		time.sleep(.1)
 except KeyboardInterrupt:
-#	write("\fGoodbye!\n\x1b[?25h")
-#	sys.stdout.flush()
+	write("\fGoodbye!\n\x1b[?25h")
+	sys.stdout.flush()
 	sys.exit(0)

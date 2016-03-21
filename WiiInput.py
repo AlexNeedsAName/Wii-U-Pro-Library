@@ -1,8 +1,7 @@
 import sys
-import math #Trig!
 import threading
 from collections import OrderedDict
-from math import atan
+from math import atan	#Trig!
 from math import degrees
 
 #Accelerometer:	/dev/event0
@@ -89,7 +88,6 @@ def runButton():
 	while 1:
 		data = ButtonsIn.read(16).encode("hex").upper()
 		array = [data[i:i+4] for i in range(0, len(data), 4)]
-		#array[i] = array[i][2:]+array[i][:2] for i in range(0, len(array))
 		if(array[4] == '0100'): #Button Press
 			state = False
 			if(array[6] == '0100'):
