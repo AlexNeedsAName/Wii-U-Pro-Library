@@ -1,13 +1,17 @@
 import sys
+import threading
 from collections import OrderedDict
 
 pipe = open('/dev/input/event0','r')
-data = ''
-array = []
 buttons = OrderedDict([('A', False), ('B', False), ('X', False), ('Y', False), ('Up', False), ('Down', False), ('Left', False), ('Right', False),  ('Select', False), ('Start', False), ('Home', False), ('LS', False), ('RS', False), ('L', False), ('R', False), ('ZL', False), ('ZR', False)])
 axes = {'LeftX': 0, 'LeftY': 0, 'RightX': 0, 'RightY': 0}
 
-def runInputThread():
+def startInputThread():
+	InputThread = threading.Thread(target=runInput, args=())
+	InputThread.setDaemon(True)
+	InputThread.start()
+
+def runInput():
 	while 1:
 		data = pipe.read(16).encode("hex").upper()
 		array = [data[i:i+4] for i in range(0, len(data), 4)]
