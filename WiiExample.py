@@ -8,7 +8,7 @@ def write(str):
 
 WiiInput.startInputThread()
 
-write("\x1b[?25l\f\nx:\ny:")
+write("\x1b[?25l\f\nx1:\ny1:\nOn:\nx2:\ny2:\nOn:")
 sys.stdout.flush()
 
 try:
@@ -18,8 +18,12 @@ try:
 			if Value == True:
 				pressed += ", "+Button
 		write("\x1b[H\x1b[K"+pressed[2:]+"\n")
-		write("\x1b[2;4H\x1b[K"+str(WiiInput.IR['x']))
-		write("\x1b[3;4H\x1b[K"+str(WiiInput.IR['y']))
+		write("\x1b[2;5H\x1b[K"+str(WiiInput.IR['x1']))
+		write("\x1b[3;5H\x1b[K"+str(WiiInput.IR['y1']))
+		write("\x1b[4;5H\x1b[K"+str(WiiInput.IR['1on']))
+		write("\x1b[5;5H\x1b[K"+str(WiiInput.IR['x2']))
+		write("\x1b[6;5H\x1b[K"+str(WiiInput.IR['y2']))
+		write("\x1b[7;5H\x1b[K"+str(WiiInput.IR['2on']))
 		sys.stdout.flush()
 		time.sleep(.1)
 except KeyboardInterrupt:

@@ -11,7 +11,7 @@ IRIn = open('/dev/input/event1','r')
 ButtonsIn = open('/dev/input/event2','r')
 
 #TODO: Accelerometer Support
-IR = { 'x1':-1, 'y1':-1 } #Values are roughly 0-1020 for x and 0-760 for y. -1 is out of bounds
+IR = { 'x1':0, 'y1':0, '1on':False, 'x2':0, 'y2':0, '2on':False } #Values are roughly 0-1020 for x and 0-760 for y.
 buttons = OrderedDict([('A', False), ('B', False), ('1', False), ('2', False), ('Up', False), ('Down', False), ('Left', False), ('Right', False),  ('-', False), ('+', False), ('Home', False)])
 
 def startInputThread():
@@ -29,16 +29,28 @@ def runIR():
 		data = IRIn.read(16).encode("hex").upper()
 		array = [data[i:i+4] for i in range(0, len(data), 4)]
 		if(array[4] == '0300'): #It's IR (Not just null data)
-			if(array[6] != 'FF03'):
-				if(array[5] == '1000' or array[5] == '1200'): #X-Axis
-					IR['x'] = 1015-int(array[6][2:]+array[6][:2], 16)
-
-				elif(array[5] == '1100' or array[5] == '1300'): #Y-Axis
-					IR['y'] = int(array[6][2:]+array[6][:2], 16)
-			else:
-				IR['x'] = -1
-				IR['y'] = -1
-
+			cord = ''
+			on = False
+			if(array[5] == '1000'):
+				cord = 'x1'
+			elif(array[5] == '1100'):
+				cord = 'y1'
+			elif(array[5] == '1200'):
+				cord = 'x2'
+			elif(array[5] == '1300'):
+				cord = 'y2'
+			if(cord != ''):
+				if(array[6] != 'FF03'):
+					if('x' in cord):
+						IR[cord] = 1016-int(array[6][2:]+array[6][:2], 16)
+					else:
+						IR[cord] = int(array[6][2:]+array[6][:2], 16)
+					on = True
+			if('1' in cord):
+				IR['1on'] = on
+			elif('2' in cord):
+				IR['2on'] = on
+			
 def runButton():
 	while 1:
 		data = ButtonsIn.read(16).encode("hex").upper()
