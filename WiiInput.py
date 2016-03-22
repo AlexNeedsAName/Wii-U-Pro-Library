@@ -13,7 +13,7 @@ IRIn = open('/dev/input/event1','r')
 ButtonsIn = open('/dev/input/event2','r')
 
 #TODO: Accelerometer Support
-IR = { 'x1':0, 'y1':0, '1on':False, 'x2':0, 'y2':0, '2on':False, 'Angle':0 } #Values are roughly 0-1020 for x and 0-760 for y.
+IR = { 'x1':0, 'y1':0, '1on':False, 'x2':0, 'y2':0, '2on':False, 'Angle':0, 'Cursor':'|', 'x':0, 'y':0 } #Values are 0-1000 for x and y.
 buttons = OrderedDict([('A', False), ('B', False), ('1', False), ('2', False), ('Up', False), ('Down', False), ('Left', False), ('Right', False),  ('-', False), ('+', False), ('Home', False)])
 
 def startInputThread():
@@ -44,7 +44,7 @@ def runIR():
 			if(cord != ''):
 				if(array[6] != 'FF03'):
 					if('x' in cord):
-						IR[cord] = 1016-int(array[6][2:]+array[6][:2], 16)
+						IR[cord] = 1015-int(array[6][2:]+array[6][:2], 16)
 					else:
 						IR[cord] = int(array[6][2:]+array[6][:2], 16)
 					on = True
@@ -52,6 +52,8 @@ def runIR():
 				IR['1on'] = on
 			elif('2' in cord):
 				IR['2on'] = on
+			IR['x'] = int((float(1000)/1015) * (IR['x1']+IR['x2'])/2)
+			IR['y'] = int((float(1000)/760) * (IR['y1']+IR['y2'])/2)
 			
 			#Angle Calculations
 			#Start with the weird cases
@@ -59,7 +61,7 @@ def runIR():
 				IR['Angle'] = 0
 			elif(IR['x1'] == IR['x2']):
 				if(IR['y1'] < IR['y2']):
-					IR['Angle'] = 90
+					IR['Angle'] = 90 
 				else:
 					IR['Angle'] = 270
 			elif(IR['y1'] == IR['y2']): 
@@ -83,6 +85,24 @@ def runIR():
 						IR['Angle'] = 0+angle
 					else:
 						IR['Angle'] = 90+(90-angle)
+				IR['Angle'] = round(IR['Angle'])
+			
+			if( 338 < IR['Angle'] <= 360 or 0 < IR['Angle'] <= 23 ):
+				IR['Cursor'] = '|'
+			if( 23  < IR['Angle'] <= 68  ):
+				IR['Cursor'] = '/'
+			if( 68  < IR['Angle'] <= 113 ):
+				IR['Cursor'] = '-'
+			if( 113 < IR['Angle'] <= 158 ):
+				IR['Cursor'] = '\\'
+			if( 158 < IR['Angle'] <= 203 ):
+				IR['Cursor'] = '|'
+			if( 203 < IR['Angle'] <= 248 ):
+				IR['Cursor'] = '/'
+			if( 248 < IR['Angle'] <= 293 ):
+				IR['Cursor'] = '-'
+			if( 293 < IR['Angle'] <= 338 ):
+				IR['Cursor'] = '\\'
 
 def runButton():
 	while 1:
