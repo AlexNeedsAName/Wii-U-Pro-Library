@@ -12,24 +12,25 @@ WiiInput.startInputThread()
 write("\x1b[?25l\f")
 sys.stdout.flush()
 
-height, width = popen('stty size','r').read().split()
-
 try:
 	while 1:
+		height, width = popen('stty size','r').read().split()
+		
 		pressed = ""
 		for Button, Value in WiiInput.buttons.items():
 			if Value == True:
 				pressed += ", "+Button
-		x = str(WiiInput.IR['x']*int(width)/1000)
-		y = str(WiiInput.IR['y']*int(height)/1000)
+		pressed = pressed[2:]
+		x = str(WiiInput.accessory['stick']['x'])
+		y = str(WiiInput.accessory['stick']['y'])
+		
+		
+		write("\x1b[H\x1b[K"+pressed+"\n")
+		write('Accessory: '+str(WiiInput.accessory['connected'])+' '+x+";"+y+' '+str(WiiInput.accessory['buttons']))
 
-		#write("\x1b[H\x1b[K"+pressed[2:]+"\n")
-		write("\b \x1b["+y+";"+x+"H"+WiiInput.IR['Cursor'])
 		sys.stdout.flush()
-		time.sleep(.01)
+		time.sleep(.1)
 except KeyboardInterrupt:
-	WiiInput.die = True
 	write("\fGoodbye!\n\x1b[?25h")
 	sys.stdout.flush()
-	sys.exit(0)
 	sys.exit(0)

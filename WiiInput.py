@@ -1,20 +1,21 @@
+
 import sys
 import threading
 from collections import OrderedDict
 from math import atan	#Trig!
 from math import degrees
 
-#Accelerometer:	/dev/event0
-#IR:		/dev/event1
-#Buttons:	/dev/event2
-#AccessoryL 	/dev/event3
+#Accelerometer:	/dev/input/event0
+#IR:		/dev/input/event1
+#Buttons:	/dev/input/event2
+#AccessoryL 	/dev/input/event3
 	
 #TODO: Accelerometer Support
 #TODO: IR Rotation of plane to match rotation
 
 IR = { 'x1': 0, 'y1': 0, '1on': False, 'x2': 0, 'y2': 0, '2on': False, 'Angle': 0, 'Cursor': '|', 'x': 0, 'y': 0 } #Values are 0-1000 for x and y.
 buttons = OrderedDict([('A', False), ('B', False), ('1', False), ('2', False), ('Up', False), ('Down', False), ('Left', False), ('Right', False),  ('-', False), ('+', False), ('Home', False)])
-#accessory = { 'buttons': { 'C': False, 'Z': False }, 'stick': { 'x': 0, 'y': 0 } } #Prep for Accessories 
+accessory = { 'connected': None, 'buttons': {'C': False, 'Z': False }, 'stick': { 'x': 0, 'y': 0 } }
 
 def readFrom(input):
 	data = input.read(16).encode("hex").upper()
@@ -34,6 +35,45 @@ def startInputThread():
 	AccThread.setDaemon(True)
 	AccThread.start()
 
+def runAcc():
+	while 1:
+		try:
+			if(AccIn == None):
+				AccIn = open('/dev/input/event3','r')
+			array = readFrom(AccIn)
+			accessory['connected'] = 'Nunchuck'
+
+			if(array[4] == '0001'):
+				if(array[6] == '0001'):
+					state = True
+				else:
+					state = False
+				if(array[5] == '0132'):
+					accessory['buttons']['C'] = state
+				elif(array[5] == '0135'):
+					accessory['buttons']['Z'] = state
+
+			elif(array[4] == '0003'):
+				if(array[5] == '0010'):
+					if(array[7] == 'FFFF'):
+						accessory['stick']['x'] = int(array[6], 16) - 65536
+					else:
+						accessory['stick']['x'] = int(array[6], 16)
+				elif(array[5] == '0011'):
+					if(array[7] == 'FFFF'):
+						accessory['stick']['y'] = int(array[6], 16) - 65536
+					else:
+						accessory['stick']['y'] = int(array[6], 16)
+
+				elif(array[5] != '0003' and array[5] != '0004' and array[5] != '0005'):
+					print array
+
+			elif(array[4] != '0000'):
+				print array
+		except:
+			accessory['connected'] = None
+			AccIn = None
+			
 def runIR():
 	IRIn = open('/dev/input/event1','r')
 	while 1:
