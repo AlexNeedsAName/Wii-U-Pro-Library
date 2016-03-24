@@ -4,29 +4,41 @@ import sys
 from os import popen
 import WiiInput
 
+IR = 1
+Buttons = 2
+Stick = 3
+
+TestState = IR
+
 def write(str):
 	sys.stdout.write(str)
 
-WiiInput.startInputThread()
+WiiInput.start()
 
 write("\x1b[?25l\f")
-sys.stdout.flush()
 
 try:
 	while 1:
-		height, width = popen('stty size','r').read().split()
+
+		if(TestState == IR):
+			height, width = popen('stty size','r').read().split()
 		
-		pressed = ""
-		for Button, Value in WiiInput.buttons.items():
-			if Value == True:
-				pressed += ", "+Button
-		pressed = pressed[2:]
-		x = str(WiiInput.accessory['stick']['x'])
-		y = str(WiiInput.accessory['stick']['y'])
+			x=WiiInput.IR['x']*int(width)/1000
+			y=WiiInput.IR['y']*int(height)/1000
+
+			write("\b \x1b["+str(y)+";"+str(x)+"H"+WiiInput.IR['Cursor'])
+
+		elif(TestState == Buttons):
+			pressed = ""
+			for Button, Value in WiiInput.buttons.items():
+				if Value == True:
+					pressed += ", "+Button
+			pressed = pressed[2:]
 		
+			write("\x1b[H\x1b[K"+pressed+"\n")
 		
-		write("\x1b[H\x1b[K"+pressed+"\n")
-		write('Accessory: '+str(WiiInput.accessory['connected'])+' '+x+";"+y+' '+str(WiiInput.accessory['buttons']))
+		elif(TestState == Sticks):
+			write("\x1b[H"+str(WiiInput.sticks))
 
 		sys.stdout.flush()
 		time.sleep(.1)

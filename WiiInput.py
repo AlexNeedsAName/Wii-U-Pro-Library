@@ -1,4 +1,3 @@
-
 import sys
 import threading
 from collections import OrderedDict
@@ -14,66 +13,122 @@ from math import degrees
 #TODO: IR Rotation of plane to match rotation
 
 IR = { 'x1': 0, 'y1': 0, '1on': False, 'x2': 0, 'y2': 0, '2on': False, 'Angle': 0, 'Cursor': '|', 'x': 0, 'y': 0 } #Values are 0-1000 for x and y.
-buttons = OrderedDict([('A', False), ('B', False), ('1', False), ('2', False), ('Up', False), ('Down', False), ('Left', False), ('Right', False),  ('-', False), ('+', False), ('Home', False)])
-accessory = { 'connected': None, 'buttons': {'C': False, 'Z': False }, 'stick': { 'x': 0, 'y': 0 } }
+buttons = OrderedDict([('A', False), ('B', False), ('C', False), ('X', False), ('Y', False), ('Z', False), ('1', False), ('2', False), ('Up', False), ('Down', False), ('Left', False), ('Right', False),  ('-', False), ('+', False), ('Home', False), ('Print', '')])
+sticks = { 'lx': 0, 'rx': 0, 'nx': 0, 'ly': 0, 'ry': 0, 'ny': 0 }
 
 def readFrom(input):
 	data = input.read(16).encode("hex").upper()
 	return [data[i+2:i+4]+data[i:i+2] for i in range(0, len(data), 4)]
 
-def startInputThread():
+def start():
 
-	ButtonThread = threading.Thread(target=runButton, args=())
-	ButtonThread.setDaemon(True)
-	ButtonThread.start()
+	Thread1 = threading.Thread(target=run, args=("/dev/input/event1")) #Usually Buttons
+	Thread1.setDaemon(True)
+	Thread1.start()
 
-	IRThread = threading.Thread(target=runIR, args=())
-	IRThread.setDaemon(True)
-	IRThread.start()
+	Thread2 = threading.Thread(target=runIR, args=()) #Usually IR
+	Thread2.setDaemon(True)
+	Thread2.start()
 
-	AccThread = threading.Thread(target=runAcc, args=())
-	AccThread.setDaemon(True)
-	AccThread.start()
+	Thread3 = threading.Thread(target=run, args=("/dev/input/event")) #Usually Extension
+	Thread3.setDaemon(True)
+	Thread3.start()
 
-def runAcc():
+def processData(array):
+	#Button Press
+	if(array[4] == '0001'):
+		
+		if(array[6] == '0001'):
+			state = True
+		else:
+			state = False
+
+		#D-Pad:
+		if(array[5]=='0067'):
+			buttons['Up'] = state
+		elif(array[5]=='006C'):
+			buttons['Down'] = state
+		elif(array[5]=='0069'):
+			buttons['Left'] = state
+		elif(array[5]=='006A'):
+			buttons['Right'] = state
+
+		#1 2
+		elif(array[5]=='0101'):
+			buttons['1'] = state
+		elif(array[5]=='0102'):
+			buttons['2'] = state
+
+		#A B C
+		elif(array[5]=='0130'):
+			buttons['A'] = state
+		elif(array[5]=='0131'):
+			buttons['B'] = state
+		elif(array[5]=='0132'):
+			buttons['C'] = state
+
+		#X Y Z
+		elif(array[5]=='0133'):
+			buttons['Y'] = state
+		elif(array[5]=='0134'):
+			buttons['X'] = state
+		elif(array[5]=='0135'):
+			buttons['Z'] = state
+
+		#L R ZL ZR
+		elif(array[5]=='0136'):
+			buttons['L'] = state
+		elif(array[5]=='0137'):
+			buttons['R'] = state
+		elif(array[5]=='0138'):
+			buttons['ZL'] = state
+		elif(array[5]=='0139'):
+			buttons['ZR'] = state
+
+		#- Home +
+		elif(array[5]=='019C'):
+			buttons['-'] = state
+		elif(array[5]=='0197'):
+			buttons['+'] = state
+		elif(array[5]=='013C'):
+			buttons['Home'] = state
+
+	#Joysticks
+	elif(array[4] == '0003'):
+
+		if(array[7] == 'FFFF'):
+			flip = -65536
+		else:
+			flip = 0
+
+		#Nunchuck
+		if(array[5] == '0010'): 
+			sticks['nx'] = int(array[6], 16) + flip
+		elif(array[5] == '0011'):
+			sticks['ny'] = int(array[6], 16) + flip
+
+		#Left Stick (Game Cube Extension)
+		elif(array[5] == '0012'): 
+			sticks['lx'] = (int(array[6], 16) + flip) * 100 / 32
+		elif(array[5] == '0013'):
+			sticks['ly'] = (int(array[6], 16) + flip) * 100 / 32
+
+		#Right Stick (Game Cube Extension)
+		elif(array[5] == '0014'): 
+			sticks['rx'] = (int(array[6], 16) + flip) * 100 / 32
+		elif(array[5] == '0015'):
+			sticks['ry'] = (int(array[6], 16) + flip) * 100 / 32
+
+def run(path):
+	file = None
 	while 1:
 		try:
-			if(AccIn == None):
-				AccIn = open('/dev/input/event3','r')
-			array = readFrom(AccIn)
-			accessory['connected'] = 'Nunchuck'
-
-			if(array[4] == '0001'):
-				if(array[6] == '0001'):
-					state = True
-				else:
-					state = False
-				if(array[5] == '0132'):
-					accessory['buttons']['C'] = state
-				elif(array[5] == '0135'):
-					accessory['buttons']['Z'] = state
-
-			elif(array[4] == '0003'):
-				if(array[5] == '0010'):
-					if(array[7] == 'FFFF'):
-						accessory['stick']['x'] = int(array[6], 16) - 65536
-					else:
-						accessory['stick']['x'] = int(array[6], 16)
-				elif(array[5] == '0011'):
-					if(array[7] == 'FFFF'):
-						accessory['stick']['y'] = int(array[6], 16) - 65536
-					else:
-						accessory['stick']['y'] = int(array[6], 16)
-
-				elif(array[5] != '0003' and array[5] != '0004' and array[5] != '0005'):
-					print array
-
-			elif(array[4] != '0000'):
-				print array
+			if(file == None):
+				file = open('/dev/input/event3','r')
+			processData(readFrom(file))
 		except:
-			accessory['connected'] = None
-			AccIn = None
-			
+			file = None
+		
 def runIR():
 	IRIn = open('/dev/input/event1','r')
 	while 1:
@@ -151,40 +206,3 @@ def runIR():
 				IR['Cursor'] = '-'
 			if( 293 < IR['Angle'] <= 338 ):
 				IR['Cursor'] = '\\'
-
-def runButton():
-	ButtonsIn = open('/dev/input/event2','r')
-	while 1:
-		array = readFrom(ButtonsIn)
-		if(array[4] == '0001'): #Button Press
-			state = False
-			if(array[6] == '0001'):
-				state = True
-			elif(array[6] == '0000'):
-				state = False
-
-			#D-Pad:
-			if(array[5]=='0067'):
-				buttons['Up'] = state
-			elif(array[5]=='006C'):
-				buttons['Down'] = state
-			elif(array[5]=='0069'):
-				buttons['Left'] = state
-			elif(array[5]=='006A'):
-				buttons['Right'] = state
-			#A B 1 2
-			elif(array[5]=='0130'):
-				buttons['A'] = state
-			elif(array[5]=='0131'):
-				buttons['B'] = state
-			elif(array[5]=='0101'):
-				buttons['1'] = state
-			elif(array[5]=='0102'):
-				buttons['2'] = state
-			#- Home +
-			elif(array[5]=='019C'):
-				buttons['-'] = state
-			elif(array[5]=='0197'):
-				buttons['+'] = state
-			elif(array[5]=='013C'):
-				buttons['Home'] = state
