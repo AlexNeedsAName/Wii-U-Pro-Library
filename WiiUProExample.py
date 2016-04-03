@@ -6,8 +6,6 @@ import WiiUProInput
 def write(str):
 	sys.stdout.write(str)
 
-WiiUProInput.startInputThread()
-
 write("\x1b[?25l\f\nLeft X:  0\nLeft Y:  0\nRight X: 0\nRight Y: 0")
 sys.stdout.flush()
 

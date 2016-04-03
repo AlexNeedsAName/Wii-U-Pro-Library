@@ -5,7 +5,7 @@ from collections import OrderedDict
 buttons = OrderedDict([('A', False), ('B', False), ('X', False), ('Y', False), ('Up', False), ('Down', False), ('Left', False), ('Right', False),  ('Select', False), ('Start', False), ('Home', False), ('LS', False), ('RS', False), ('L', False), ('R', False), ('ZL', False), ('ZR', False)])
 axes = {'LeftX': 0, 'LeftY': 0, 'RightX': 0, 'RightY': 0}
 
-def startInputThread():
+def start():
 	InputThread = threading.Thread(target=runInput, args=())
 	InputThread.setDaemon(True)
 	InputThread.start()
@@ -89,3 +89,5 @@ def runInput():
 		except:
 			pipe = None
 			conn = False
+
+start()
