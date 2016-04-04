@@ -16,10 +16,10 @@ try:
 			if Value == True:
 				pressed += ", "+Button
 		write("\x1b[H\x1b[K"+pressed[2:])
-		write("\x1b[2;10H\x1b[K"+str(WiiUProInput.axes["LeftX"]))
-		write("\x1b[3;10H\x1b[K"+str(WiiUProInput.axes["LeftY"]))
-		write("\x1b[4;10H\x1b[K"+str(WiiUProInput.axes["RightX"]))
-		write("\x1b[5;10H\x1b[K"+str(WiiUProInput.axes["RightY"]))
+		write("\x1b[2;10H\x1b[K"+str(WiiUProInput.sticks["LeftX"]))
+		write("\x1b[3;10H\x1b[K"+str(WiiUProInput.sticks["LeftY"]))
+		write("\x1b[4;10H\x1b[K"+str(WiiUProInput.sticks["RightX"]))
+		write("\x1b[5;10H\x1b[K"+str(WiiUProInput.sticks["RightY"]))
 		sys.stdout.flush()
 		time.sleep(.1)
 except KeyboardInterrupt:

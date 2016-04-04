@@ -13,8 +13,6 @@ TestState = IR
 def write(str):
 	sys.stdout.write(str)
 
-WiiInput.start()
-
 write("\x1b[?25l\f")
 
 try:
@@ -23,6 +21,7 @@ try:
 		write(str(WiiInput.buttons)+"\n")
 		write(str(WiiInput.IR)+"\n")
 		write(str(WiiInput.sticks)+"\n")
+		write(str(WiiInput.ext)+"\n")
 		sys.stdout.flush()
 		time.sleep(.1)
 		

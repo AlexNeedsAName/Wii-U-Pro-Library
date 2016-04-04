@@ -12,35 +12,43 @@ from math import degrees
 #TODO: Accelerometer Support
 #TODO: IR Rotation of plane to match rotation
 
+fileOffset = 1
+
 IR = { 'x1': 0, 'y1': 0, '1on': False, 'x2': 0, 'y2': 0, '2on': False, 'Angle': 0, 'Cursor': '|', 'x': 0, 'y': 0 } #Values are 0-1000 for x and y.
 buttons = OrderedDict([('A', False), ('B', False), ('C', False), ('X', False), ('Y', False), ('Z', False), ('L', False), ('R', False), ('Z', False), ('ZL', False), ('ZR', False), ('1', False), ('2', False), ('Up', False), ('Down', False), ('Left', False), ('Right', False),  ('-', False), ('+', False), ('Home', False)])
 sticks = { 'lx': 0, 'rx': 0, 'nx': 0, 'ly': 0, 'ry': 0, 'ny': 0 }
+ext = False
 
 def readFrom(input):
 	data = input.read(16).encode("hex").upper()
 	return [data[i+2:i+4]+data[i:i+2] for i in range(0, len(data), 4)]
 
 def start():
-	Thread1 = threading.Thread(target=run, args=["/dev/input/event2"]) #Usually Buttons
+	Thread1 = threading.Thread(target=run, args=["/dev/input/event"+str(2+fileOffset), False, False]) #Buttons
 	Thread1.setDaemon(True)
 	Thread1.start()
 
-	Thread2 = threading.Thread(target=runIR, args=()) #Usually IR
+	Thread2 = threading.Thread(target=run, args=["/dev/input/event"+str(1+fileOffset), True, False]) #IR
 	Thread2.setDaemon(True)
 	Thread2.start()
 
-	Thread3 = threading.Thread(target=run, args=["/dev/input/event3"]) #Usually Extension
+	Thread3 = threading.Thread(target=run, args=["/dev/input/event"+str(3+fileOffset), False, True]) #Extension
 	Thread3.setDaemon(True)
 	Thread3.start()
 
-def processData(array):
-	#Button Press
+def processData(array, isIR):
+	global buttons
+	global sticks
+	global IR
+
+	if(not isIR):
+		#Button Press
 		if(array[4] == '0001'):
 			if(array[6] == '0001'):
 				state = True
 			else:
 				state = False	
-	
+
 			#D-Pad:
 			if(array[5]=='0067'):
 					buttons['Up'] = state
@@ -116,21 +124,7 @@ def processData(array):
 				sticks['rx'] = (int(array[6], 16) + flip) * 100 / 32
 			elif(array[5] == '0015'):
 				sticks['ry'] = (int(array[6], 16) + flip) * 100 / 32
-
-def run(path):
-	file = None
-	while 1:
-		try:
-			if(file == None):
-				file = open(path,'r')
-			processData(readFrom(file))
-		except:
-			file = None
-		
-def runIR():
-	IRIn = open('/dev/input/event1','r')
-	while 1:
-		array = readFrom(IRIn)
+	else:
 		if(array[4] == '0003'): #It's IR (Not just null data)
 			cord = ''
 			on = False
@@ -174,7 +168,7 @@ def runIR():
 			else: #HashtagTrigTime
 				rise = float(IR['y1'] - IR['y2'])
 				run = float(IR['x1'] - IR['x2'])
-				
+					
 				angle = degrees(atan(abs(rise/run)))
 				if(rise > 0):
 					if(run > 0):
@@ -187,7 +181,7 @@ def runIR():
 					else:
 						IR['Angle'] = 90+(90-angle)
 				IR['Angle'] = round(IR['Angle'])
-			
+				
 			if( 338 < IR['Angle'] <= 360 or 0 < IR['Angle'] <= 23 ):
 				IR['Cursor'] = '|'
 			if( 23  < IR['Angle'] <= 68  ):
@@ -204,3 +198,20 @@ def runIR():
 				IR['Cursor'] = '-'
 			if( 293 < IR['Angle'] <= 338 ):
 				IR['Cursor'] = '\\'
+def run(path, IR, Accessory):
+	file = None
+	global ext
+	while 1:
+		try:
+			if(file == None):
+				file = open(path,'r')
+				if(Accessory):
+					ext = True
+			processData(readFrom(file), IR)
+		except:
+			file = None
+			if(Accessory):
+				ext = None
+				buttons['C']=buttons['Z']=buttons['L']=buttons['R']=buttons['ZL']=buttons['ZR']=buttons['X']=buttons['Y']=False
+				sticks['lx']=sticks['rx']=sticks['ly']=sticks['ry']=0
+start()
