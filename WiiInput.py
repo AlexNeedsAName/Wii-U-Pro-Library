@@ -12,11 +12,12 @@ from math import degrees
 #TODO: Accelerometer Support
 #TODO: IR Rotation of plane to match rotation
 
-fileOffset = 1
+fileOffset = 0
 
 IR = { 'x1': 0, 'y1': 0, '1on': False, 'x2': 0, 'y2': 0, '2on': False, 'Angle': 0, 'Cursor': '|', 'x': 0, 'y': 0 } #Values are 0-1000 for x and y.
 buttons = OrderedDict([('A', False), ('B', False), ('C', False), ('X', False), ('Y', False), ('Z', False), ('L', False), ('R', False), ('Z', False), ('ZL', False), ('ZR', False), ('1', False), ('2', False), ('Up', False), ('Down', False), ('Left', False), ('Right', False),  ('-', False), ('+', False), ('Home', False)])
 sticks = { 'lx': 0, 'rx': 0, 'nx': 0, 'ly': 0, 'ry': 0, 'ny': 0 }
+accel = { 'x': 0, 'y': 0, 'z': 0, 'nx': 0, 'ny': 0, 'nz': 0 }
 ext = False
 
 def readFrom(input):
@@ -24,11 +25,15 @@ def readFrom(input):
 	return [data[i+2:i+4]+data[i:i+2] for i in range(0, len(data), 4)]
 
 def start():
-	Thread1 = threading.Thread(target=run, args=["/dev/input/event"+str(2+fileOffset), False, False]) #Buttons
+	Thread0 = threading.Thread(target=run, args=["/dev/input/event"+str(0+fileOffset), False, False]) #Accel
+	Thread0.setDaemon(True)
+	Thread0.start()
+
+	Thread1 = threading.Thread(target=run, args=["/dev/input/event"+str(1+fileOffset), True, False]) #IR
 	Thread1.setDaemon(True)
 	Thread1.start()
 
-	Thread2 = threading.Thread(target=run, args=["/dev/input/event"+str(1+fileOffset), True, False]) #IR
+	Thread2 = threading.Thread(target=run, args=["/dev/input/event"+str(2+fileOffset), False, False]) #Buttons
 	Thread2.setDaemon(True)
 	Thread2.start()
 
@@ -36,7 +41,7 @@ def start():
 	Thread3.setDaemon(True)
 	Thread3.start()
 
-def processData(array, isIR):
+def processData(array, isIR=False, isExt=False):
 	global buttons
 	global sticks
 	global IR
@@ -99,13 +104,30 @@ def processData(array, isIR):
 			elif(array[5]=='013C'):
 				buttons['Home'] = state
 
-		#Joysticks
+		#Joysticks/Accelerometer
 		elif(array[4] == '0003'):
 
 			if(array[7] == 'FFFF'):
 				flip = -65536
 			else:
 				flip = 0
+
+			num = round((int(array[6], 16) + flip ) * 100.0, 1)
+			
+			if (isExt):
+				if(array[5] == '0003'):
+					accel['nx'] = round(num/65535,1)
+				elif(array[5] == '0004'):
+					accel['ny'] = round(num/65535,1)
+				elif(array[5] == '0005'):
+					accel['nz'] = round(num/65535,1)
+			else:
+				if(num > accel['x']):
+					accel['x'] = round(num/512,1)
+				if(num > accel['y']):
+					accel['y'] = round(num/512,1)
+				if(num > accel['z']):
+					accel['z'] = round(num/512,1)
 
 			#Nunchuck
 			if(array[5] == '0010'): 
@@ -207,7 +229,7 @@ def run(path, IR, Accessory):
 				file = open(path,'r')
 				if(Accessory):
 					ext = True
-			processData(readFrom(file), IR)
+			processData(readFrom(file), IR, Accessory)
 		except:
 			file = None
 			if(Accessory):

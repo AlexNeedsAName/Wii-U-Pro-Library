@@ -21,6 +21,7 @@ try:
 		write(str(WiiInput.buttons)+"\n")
 		write(str(WiiInput.IR)+"\n")
 		write(str(WiiInput.sticks)+"\n")
+		write(str(WiiInput.accel)+"\n")
 		write(str(WiiInput.ext)+"\n")
 		sys.stdout.flush()
 		time.sleep(.1)
